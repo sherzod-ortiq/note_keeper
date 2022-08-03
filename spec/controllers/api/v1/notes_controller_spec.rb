@@ -46,5 +46,4 @@ RSpec.describe ::Api::V1::NotesController, type: :controller do
   
 	end
 
-
 end

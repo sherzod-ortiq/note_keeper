@@ -1,0 +1,39 @@
+# ~ 301.59 MB
+FROM ruby:2.6.10
+
+# ~ 23.67 MB
+# FROM ruby:2.6.10-alpine
+
+# It did not work unfortunately, did not source ~/.bashrc. Default shell here is "/bin/sh" so far.
+# Set bash as a default shell (double quote is must here).
+# Once the default shell is bash, the \. ~/.bashrc will be run when new shell is opened.
+# Check ~/.profile for clarification.
+# SHELL ["/bin/bash", "-c"]
+
+WORKDIR '/note_keeper_app'
+
+COPY ./Gemfile ./
+
+COPY ./Gemfile.lock ./
+
+RUN bundle install
+
+# Install nvm (node version manager)
+RUN curl -o- https://raw.githubusercontent.com/nvm-sh/nvm/v0.39.1/install.sh | bash
+
+# Install node js, newer version is having problems with webpacker.
+RUN . ~/.bashrc && nvm install 14.0.0
+
+# Needed by yarn.
+RUN apt-get update && apt-get -y install python2
+
+# Install yarn package manager globally (not added into package.json).
+RUN . ~/.bashrc && npm install --global yarn
+
+# No need for package-lock.json, package.json is enough, we use yarn package manager.
+COPY ./package.json ./
+
+COPY ./yarn.lock ./
+
+# Install the node js packages with yarn, you may need VPN as some resources are not available from certain locations.
+RUN . ~/.bashrc && yarn install --check-files
