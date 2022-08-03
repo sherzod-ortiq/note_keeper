@@ -1,0 +1,44 @@
+version: '3'
+services:
+  postgres:
+    image: 'postgres:14.4-alpine'
+    volumes:
+      - '~/docker/volumes/note_keeper/development/postgresql:/var/lib/postgresql/data'
+    # Database name, user name, user password are taken from those environment variables.
+    # Database is created there and no need to run rails db:create.
+    environment:
+      - POSTGRES_HOST=postgres
+      - POSTGRES_DB=note_keeper_dev
+      - POSTGRES_USER=note_keeper_dev
+      - POSTGRES_PASSWORD=note_keeper_dev
+    hostname: 'postgres'
+    expose:
+      - '5432'
+    ports:
+      - '5432:5432'
+
+  note_keeper_app:
+    build:
+      dockerfile: Dockerfile.dev
+      context: ./
+    volumes:
+      - '/note_keeper_app/node_modules'
+      - './:/note_keeper_app'
+    environment:
+      - RAILS_ENV=development
+      - POSTGRES_HOST=postgres
+      - POSTGRES_PORT=5432
+      - POSTGRES_DB=note_keeper_dev
+      - POSTGRES_USER=note_keeper_dev
+      - POSTGRES_PASSWORD=note_keeper_dev
+    hostname: 'note_keeper_app'
+    expose:
+      - '3000'
+    ports:
+      - '3000:3000'
+    depends_on:
+      - postgres
+    restart: on-failure
+    # Server has to listen to ip 0.0.0.0 within the container. Because the access from outside the container will not arrive via 127.0.0.1/localhost.
+    # By default in development rails will listen to ip 127.0.0.1/localhost.
+    command: sh -c '. ~/.bashrc && rm -f tmp/pids/server.pid && rails db:migrate && rails server --binding 0.0.0.0 --port 3000 --environment=development'
